@@ -111,7 +111,7 @@ function lrm_project_bottom_redirect_script() {
                 prompt.id = promptId;
                 prompt.className = '_ParagraphCustom_tidy lrm-scroll-home-prompt';
                 prompt.setAttribute('aria-hidden', 'true');
-                prompt.textContent = 'Scroll Back to Project Overview';
+                prompt.textContent = '↓ Scroll Back to Project Overview ↓';
                 document.body.appendChild(prompt);
 
                 return prompt;
@@ -259,7 +259,7 @@ function lrm_project_bottom_redirect_script() {
             left: 50%;
             bottom: 0;
             transform: translateX(-50%) translateY(16px);
-            padding: 18vh 0;
+            padding: 20vh 0;
             text-align: center;
             opacity: 0;
             transition: opacity 260ms ease, transform 260ms ease;
