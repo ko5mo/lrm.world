@@ -27,11 +27,14 @@ function lrm_project_bottom_redirect_script() {
         (function () {
             var redirectUrl = <?php echo wp_json_encode($home_url); ?>;
             var thresholdPx = 24;
+            var promptDistanceRatio = 0.05;
             var hasRedirected = false;
             var lastPathname = window.location.pathname;
             var promptShown = false;
             var promptShownAt = 0;
             var promptId = 'lrm-scroll-home-prompt';
+            var lastScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+            var isScrollingUp = false;
 
             function isLikelyProjectPage() {
                 var body = document.body;
@@ -63,6 +66,35 @@ function lrm_project_bottom_redirect_script() {
                 );
 
                 return (scrollTop + viewportHeight) >= (documentHeight - thresholdPx);
+            }
+
+            function remainingDistanceToBottom() {
+                var scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+                var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+                var documentHeight = Math.max(
+                    document.body.scrollHeight,
+                    document.documentElement.scrollHeight,
+                    document.body.offsetHeight,
+                    document.documentElement.offsetHeight,
+                    document.body.clientHeight,
+                    document.documentElement.clientHeight
+                );
+
+                return Math.max(0, documentHeight - (scrollTop + viewportHeight));
+            }
+
+            function shouldShowPromptEarly() {
+                var documentHeight = Math.max(
+                    document.body.scrollHeight,
+                    document.documentElement.scrollHeight,
+                    document.body.offsetHeight,
+                    document.documentElement.offsetHeight,
+                    document.body.clientHeight,
+                    document.documentElement.clientHeight
+                );
+                var earlyPromptDistance = documentHeight * promptDistanceRatio;
+
+                return remainingDistanceToBottom() <= earlyPromptDistance;
             }
 
             function getPromptElement() {
@@ -136,6 +168,17 @@ function lrm_project_bottom_redirect_script() {
                 triggerRedirect();
             }
 
+            function handleScrollDirection() {
+                var currentScrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+                isScrollingUp = currentScrollTop < lastScrollTop;
+
+                if (isScrollingUp) {
+                    hidePrompt();
+                }
+
+                lastScrollTop = currentScrollTop;
+            }
+
             function maybeShowPrompt() {
                 var currentPathname = window.location.pathname;
 
@@ -150,11 +193,16 @@ function lrm_project_bottom_redirect_script() {
                     return;
                 }
 
+                if (isScrollingUp) {
+                    hidePrompt();
+                    return;
+                }
+
                 if (hasRedirected) {
                     return;
                 }
 
-                if (atBottomOfPage()) {
+                if (shouldShowPromptEarly()) {
                     showPrompt();
                     return;
                 }
@@ -171,7 +219,10 @@ function lrm_project_bottom_redirect_script() {
                 maybeShowPrompt();
             }, { passive: true });
 
-            window.addEventListener('scroll', maybeShowPrompt, { passive: true });
+            window.addEventListener('scroll', function () {
+                handleScrollDirection();
+                maybeShowPrompt();
+            }, { passive: true });
             window.addEventListener('resize', maybeShowPrompt);
             window.addEventListener('popstate', maybeShowPrompt);
 
@@ -208,9 +259,9 @@ function lrm_project_bottom_redirect_script() {
             left: 50%;
             bottom: 0;
             transform: translateX(-50%) translateY(16px);
-            padding: 15vh 0;
+            padding: 18vh 0;
             text-align: center;
-            opacity: 0.5;
+            opacity: 0;
             transition: opacity 260ms ease, transform 260ms ease;
             pointer-events: none;
             z-index: 10000;
