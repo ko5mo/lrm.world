@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASCII Surf GIF</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0b1020;
+      display: grid;
+      place-items: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .wrap {
+      display: grid;
+      gap: 12px;
+      justify-items: center;
+    }
+    canvas {
+      width: 700px;
+      height: 700px;
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+      background: #000;
+    }
+    .hint {
+      color: rgba(255,255,255,0.65);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <canvas id="ascii" width="700" height="700"></canvas>
+    <div class="hint">Animated ASCII from giphy.gif</div>
+  </div>
+
+  <img id="gif" src="giphy.gif" alt="surf gif" style="display:none;" />
+
+  <script>
+    const canvas = document.getElementById('ascii');
+    const ctx = canvas.getContext('2d');
+    const img = document.getElementById('gif');
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const off = document.createElement('canvas');
+    const offCtx = off.getContext('2d', { willReadFrequently: true });
+
+    const asciiRamp = ' .,:;i1tfLCG08@';
+    const cols = 78;
+    const rows = 78;
+    const cellW = W / cols;
+    const cellH = H / rows;
+
+    off.width = cols;
+    off.height = rows;
+
+    function drawFrame() {
+      if (!img.complete || !img.naturalWidth) {
+        requestAnimationFrame(drawFrame);
+        return;
+      }
+
+      offCtx.clearRect(0, 0, cols, rows);
+
+      const sw = img.naturalWidth;
+      const sh = img.naturalHeight;
+      const srcSize = Math.min(sw, sh);
+      const sx = (sw - srcSize) / 2;
+      const sy = (sh - srcSize) / 2;
+
+      offCtx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, cols, rows);
+      const { data } = offCtx.getImageData(0, 0, cols, rows);
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+      ctx.font = `${Math.ceil(cellH * 1.05)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const i = (y * cols + x) * 4;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const a = data[i + 3] / 255;
+
+          const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+          const idx = Math.max(0, Math.min(asciiRamp.length - 1, Math.floor(luminance * (asciiRamp.length - 1))));
+          const ch = asciiRamp[idx];
+
+</html>
